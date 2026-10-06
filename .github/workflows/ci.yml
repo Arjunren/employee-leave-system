@@ -1,0 +1,25 @@
+name: CI
+on: [push, pull_request]
+permissions: { contents: read }
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_DB: leave_test, POSTGRES_USER: leave, POSTGRES_PASSWORD: leave_test }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U leave -d leave_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: jdbc:postgresql://localhost:5432/leave_test
+      DATABASE_USERNAME: leave
+      DATABASE_PASSWORD: leave_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: '25', cache: maven }
+      - run: chmod +x mvnw
+      - run: ./mvnw --batch-mode --update-snapshots verify
+
